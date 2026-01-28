@@ -52,6 +52,7 @@ def plot_all_functions_combined(all_results, plot_data):
     """
     Create combined visualization for all functions
     Shows 4 subplots: best performance, average performance, convergence, and std dev
+    Fixed to show ALL 15 functions properly
     
     Args:
         all_results: Dictionary with function names as keys and results lists as values
@@ -66,31 +67,37 @@ def plot_all_functions_combined(all_results, plot_data):
     sorted_functions = sorted(stats_dict.items(), key=lambda x: x[1]['mean'])
     function_names = [f[0] for f in sorted_functions]
     
-    # Create figure with 4 subplots
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=FIGURE_SIZE, dpi=DPI)
+    # Create figure with 4 subplots - larger figure for better visibility
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(18, 14), dpi=DPI)
     
     # Plot 1: Best Performance (Top Left)
     mins = [stats_dict[name]['min'] for name in function_names]
-    bars1 = ax1.barh(function_names, mins, color='#2E86AB', alpha=0.8)
+    bars1 = ax1.barh(range(len(function_names)), mins, color='#2E86AB', alpha=0.8)
+    ax1.set_yticks(range(len(function_names)))
+    ax1.set_yticklabels(function_names, fontsize=9)
     ax1.set_title('Best Normalized Fitness by Function', fontweight='bold', fontsize=14)
     ax1.set_xlabel('Best Fitness (0-1)', fontsize=12)
     ax1.set_xlim([0, 1])
     ax1.grid(True, alpha=0.3, axis='x')
+    ax1.invert_yaxis()  # Best at top
     
     # Add value labels
-    for i, (bar, val) in enumerate(zip(bars1, mins)):
+    for i, val in enumerate(mins):
         ax1.text(val + 0.01, i, f'{val:.4f}', va='center', fontsize=8)
     
     # Plot 2: Average Performance (Top Right)
     means = [stats_dict[name]['mean'] for name in function_names]
-    bars2 = ax2.barh(function_names, means, color='#A23B72', alpha=0.8)
+    bars2 = ax2.barh(range(len(function_names)), means, color='#A23B72', alpha=0.8)
+    ax2.set_yticks(range(len(function_names)))
+    ax2.set_yticklabels(function_names, fontsize=9)
     ax2.set_title('Average Normalized Fitness by Function', fontweight='bold', fontsize=14)
     ax2.set_xlabel('Average Fitness (0-1)', fontsize=12)
     ax2.set_xlim([0, 1])
     ax2.grid(True, alpha=0.3, axis='x')
+    ax2.invert_yaxis()  # Best at top
     
     # Add value labels
-    for i, (bar, val) in enumerate(zip(bars2, means)):
+    for i, val in enumerate(means):
         ax2.text(val + 0.01, i, f'{val:.4f}', va='center', fontsize=8)
     
     # Plot 3: Convergence of Top Functions (Bottom Left)
@@ -101,7 +108,7 @@ def plot_all_functions_combined(all_results, plot_data):
         if func_name in plot_data:
             linewidth = 3 if i == 0 else 2
             ax3.plot(plot_data[func_name], label=func_name, 
-                    linewidth=linewidth, color=colors[i])
+                    linewidth=linewidth, color=colors[i], alpha=0.8)
     
     ax3.set_title(f'Convergence - Top {PLOT_TOP_N_FUNCTIONS} Functions', 
                   fontweight='bold', fontsize=14)
@@ -113,17 +120,20 @@ def plot_all_functions_combined(all_results, plot_data):
     
     # Plot 4: Standard Deviation (Bottom Right)
     stds = [stats_dict[name]['std'] for name in function_names]
-    bars4 = ax4.barh(function_names, stds, color='#F18F01', alpha=0.8)
+    bars4 = ax4.barh(range(len(function_names)), stds, color='#F18F01', alpha=0.8)
+    ax4.set_yticks(range(len(function_names)))
+    ax4.set_yticklabels(function_names, fontsize=9)
     ax4.set_title('Standard Deviation by Function', fontweight='bold', fontsize=14)
     ax4.set_xlabel('Std Dev', fontsize=12)
     ax4.grid(True, alpha=0.3, axis='x')
+    ax4.invert_yaxis()  # Best at top
     
     # Add value labels
-    for i, (bar, val) in enumerate(zip(bars4, stds)):
+    for i, val in enumerate(stds):
         ax4.text(val + 0.001, i, f'{val:.4f}', va='center', fontsize=8)
     
     # Main title
-    plt.suptitle('GA Performance Analysis - Normalized Values (0-1)', 
+    plt.suptitle(f'GA Performance Analysis - All {len(function_names)} Functions (Normalized 0-1)', 
                  fontsize=18, fontweight='bold', y=0.995)
     
     plt.tight_layout()
@@ -143,7 +153,7 @@ def plot_comparison_boxplot(all_results):
     function_names = [item[0] for item in sorted_items]
     data = [item[1] for item in sorted_items]
     
-    fig, ax = plt.subplots(figsize=(14, 8))
+    fig, ax = plt.subplots(figsize=(16, 10))
     
     bp = ax.boxplot(data, labels=function_names, vert=False, patch_artist=True)
     
@@ -180,7 +190,7 @@ def create_performance_heatmap(all_results):
     
     data_matrix = np.array(data_matrix)
     
-    fig, ax = plt.subplots(figsize=(10, 12))
+    fig, ax = plt.subplots(figsize=(10, 14))
     
     im = ax.imshow(data_matrix, cmap='YlOrRd', aspect='auto')
     
@@ -203,7 +213,8 @@ def create_performance_heatmap(all_results):
             text = ax.text(j, i, f'{data_matrix[i, j]:.4f}',
                           ha="center", va="center", color="black", fontsize=8)
     
-    ax.set_title('Performance Metrics Heatmap', fontweight='bold', fontsize=16)
+    ax.set_title('Performance Metrics Heatmap - All Functions', 
+                 fontweight='bold', fontsize=16)
     plt.tight_layout()
     plt.show()
 
