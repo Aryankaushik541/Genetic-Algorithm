@@ -5,8 +5,11 @@ Provides plotting functions for individual and combined function analysis
 
 import matplotlib.pyplot as plt
 import numpy as np
-from ga_config import FIGURE_SIZE, DPI, PLOT_TOP_N_FUNCTIONS
+from config import FIGURE_SIZE, DPI
 from ga_algorithm import calculate_statistics
+
+# Plot top N functions in convergence
+PLOT_TOP_N_FUNCTIONS = 5
 
 def plot_individual_function(func_name, results, history, stats):
     """
