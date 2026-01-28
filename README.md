@@ -13,8 +13,7 @@ A comprehensive Genetic Algorithm implementation for optimizing 15 benchmark fun
 - **Blazing Fast**: Completes all 375 runs (15 functions × 25 runs) in ~2-5 seconds on multi-core systems
 - **Statistical Analysis**: Min, Mean, Median, and Standard Deviation with 25-30 runs
 - **Advanced Visualization**: Convergence plots, performance comparisons, and distribution analysis
-- **Export Utilities**: Export results to CSV, JSON, and Markdown formats
-- **Utility Scripts**: Quick testing, batch analysis, and results export tools
+- **Simple Utilities**: Quick testing, batch analysis, and export (CSV/JSON/Markdown) - all in one file!
 
 ## ⚡ Parallel Execution
 
@@ -100,37 +99,28 @@ Select an option:
 Enter your choice (1-3):
 ```
 
-### Quick Testing (Utility Scripts)
+### Utilities (Simple & Fast)
 
-For rapid testing without the full menu:
-
-```bash
-# Test single function
-python quick_test.py Sphere
-
-# Compare multiple functions
-python quick_test.py compare Sphere Rastrigin Ackley
-```
-
-### Export Results
-
-Export results to CSV, JSON, and Markdown formats:
+All utilities combined in one simple file: `utils.py`
 
 ```bash
-# Export all 15 functions to all formats (CSV, JSON, MD)
-python export_results.py all 30
+# Quick test a single function
+python utils.py test Sphere 10
+
+# Batch test multiple functions
+python utils.py batch Sphere Rastrigin Ackley 10
+
+# Export all functions to all formats (CSV, JSON, MD)
+python utils.py export all 30
 
 # Export all functions to CSV only
-python export_results.py csv 20
+python utils.py export all 20 csv
 
-# Export specific function to all formats
-python export_results.py Sphere all 10
-
-# Export specific function to JSON only
-python export_results.py Rastrigin json 15
+# Export specific function
+python utils.py export Sphere 10 json
 ```
 
-**See [EXPORT_USAGE.md](EXPORT_USAGE.md) for complete export documentation.**
+**That's it! Simple and straightforward.** 🎯
 
 ## 📊 Output Examples
 
@@ -184,7 +174,6 @@ MAX_EXECUTION_TIME = 20    # Maximum execution time in seconds
 Genetic-Algorithm/
 ├── 📖 Documentation
 │   ├── README.md              # This file
-│   ├── EXPORT_USAGE.md        # Export utility guide
 │   └── LICENSE                # MIT License
 │
 ├── 🎮 Main Application
@@ -194,10 +183,8 @@ Genetic-Algorithm/
 │   ├── visualization.py       # Graph generation
 │   └── results_table.py       # Table display utilities
 │
-├── 🛠️ Utility Scripts
-│   ├── quick_test.py          # Fast function testing
-│   ├── batch_analysis.py      # Batch testing & comparison
-│   └── export_results.py      # Results export (CSV/JSON/MD)
+├── 🛠️ Utilities
+│   └── utils.py               # All utilities in one simple file
 │
 └── 🔧 Configuration
     ├── ga_config.py           # GA parameters
@@ -226,55 +213,98 @@ Genetic-Algorithm/
 | Bent Cigar | 0.0 | [-100, 100] | Unimodal |
 | Booth | 0.0 | [-10, 10] | Unimodal |
 
-## 🛠️ Utility Scripts
+## 🛠️ Utilities Guide
 
-### 1. Quick Test
+All utilities are in one simple file: `utils.py`
+
+### 1. Quick Test (Single Function)
+
 ```bash
-# Test single function with 10 runs
-python quick_test.py Sphere 10
-
-# Compare multiple functions
-python quick_test.py compare Sphere Rastrigin Ackley
+python utils.py test Sphere 10
 ```
-Fast testing of individual functions without full menu.
 
-### 2. Batch Analysis
-```python
-from batch_analysis import batch_test_functions
-
-# Test multiple functions
-results = batch_test_functions(['Sphere', 'Rastrigin'], num_runs=10)
+**Output:**
 ```
-Automated batch testing and configuration comparison.
+🔬 Quick Test: Sphere
+============================================================
+Runs: 10
+
+✓ Completed in 1.23s
+
+Min:    0.001234
+Mean:   0.012345
+Median: 0.010234
+Std:    0.005678
+Max:    0.023456
+============================================================
+```
+
+### 2. Batch Test (Multiple Functions)
+
+```bash
+python utils.py batch Sphere Rastrigin Ackley 10
+```
+
+**Output:**
+```
+📊 Batch Test: 3 functions
+============================================================
+Runs per function: 10
+
+[1/3] Sphere... ✓
+[2/3] Rastrigin... ✓
+[3/3] Ackley... ✓
+
+✓ All completed in 3.45s
+
+Comparison:
+------------------------------------------------------------
+🥇 Sphere                Mean: 0.012345
+🥈 Rastrigin             Mean: 0.234567
+🥉 Ackley                Mean: 0.345678
+============================================================
+```
 
 ### 3. Export Results
+
 ```bash
-# Export all 15 functions to all formats (CSV, JSON, MD)
-python export_results.py all 30
+# Export all 15 functions to all formats
+python utils.py export all 30
 
 # Export all functions to CSV only
-python export_results.py csv 20
+python utils.py export all 20 csv
 
-# Export specific function to all formats
-python export_results.py Sphere all 10
+# Export specific function to JSON
+python utils.py export Sphere 10 json
+```
 
-# Export specific function to JSON only
-python export_results.py Rastrigin json 15
+**Output:**
+```
+🚀 Run & Export
+============================================================
+Functions: 15
+Runs: 30
+Export: all
+============================================================
+
+[1/15] Sphere... ✓
+[2/15] Rastrigin... ✓
+...
+[15/15] Booth... ✓
+
+✓ Completed in 45.23s
+
+📤 Exporting results...
+✓ CSV: ga_results_20240128_153045.csv
+✓ JSON: ga_results_20240128_153045.json
+✓ Markdown: ga_results_20240128_153045.md
+✓ Export complete!
 ```
 
 **Export Formats:**
 - **CSV** - For Excel/spreadsheet analysis
 - **JSON** - For programmatic access
 - **Markdown** - For documentation/reports
-
-**Output Files:**
-```
-ga_results_20240128_153045.csv
-ga_results_20240128_153045.json
-ga_results_20240128_153045.md
-```
-
-**See [EXPORT_USAGE.md](EXPORT_USAGE.md) for complete documentation.**
 
 ## 🤝 Contributing
 
@@ -301,8 +331,8 @@ This project is open source and available under the MIT License.
 ✅ **Fast Execution**: 2-5 seconds for all 375 runs  
 ✅ **Statistical Rigor**: 25-30 independent runs with i*seed randomization  
 ✅ **Professional Visualization**: Multiple graph types showing all 15 functions  
-✅ **Export Utilities**: CSV, JSON, Markdown formats  
-✅ **Utility Scripts**: Quick testing, batch analysis, export tools  
+✅ **Simple Utilities**: All tools in one file - `utils.py`  
+✅ **Export Formats**: CSV, JSON, Markdown  
 ✅ **UV Support**: Modern Python package management  
 ✅ **Production Ready**: Clean code, proper structure, MIT licensed
 
