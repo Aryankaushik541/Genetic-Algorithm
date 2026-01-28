@@ -3,7 +3,7 @@ import random
 import time
 from multiprocessing import Pool, cpu_count
 from benchmark_functions import benchmark_functions, function_bounds
-from ga_config import *
+from config import *
 
 def initialize_population(bounds):
     """Initialize population within given bounds"""
