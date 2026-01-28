@@ -150,12 +150,16 @@ def run_and_export(function_names=None, num_runs=30, export_format='all'):
     Run experiments and export results
     
     Args:
-        function_names: List of function names (None = all)
+        function_names: List of function names or 'all' for all functions
         num_runs: Number of runs per function
         export_format: 'csv', 'json', 'md', or 'all'
     """
-    if function_names is None:
+    # Handle 'all' keyword
+    if function_names is None or function_names == 'all':
         function_names = list(benchmark_functions.keys())
+    elif isinstance(function_names, str):
+        # Single function name as string
+        function_names = [function_names]
     
     print("\n" + "="*60)
     print(" RUNNING EXPERIMENTS ".center(60))
@@ -167,8 +171,8 @@ def run_and_export(function_names=None, num_runs=30, export_format='all'):
     results_dict = {}
     start_time = time.time()
     
-    for func_name in function_names:
-        print(f"Processing {func_name}...", end=" ", flush=True)
+    for i, func_name in enumerate(function_names, 1):
+        print(f"[{i}/{len(function_names)}] Processing {func_name}...", end=" ", flush=True)
         results, _ = run_multiple_experiments(func_name, num_runs)
         results_dict[func_name] = results
         print("✓")
@@ -197,22 +201,45 @@ if __name__ == "__main__":
     
     if len(sys.argv) > 1:
         # Command-line usage
-        format_arg = sys.argv[1] if len(sys.argv) > 1 else 'all'
-        num_runs = int(sys.argv[2]) if len(sys.argv) > 2 else 10
+        # First argument can be 'all' or format
+        first_arg = sys.argv[1].lower()
         
-        print("\nExport Results Utility")
+        # Check if first argument is a function selection or format
+        if first_arg in ['all', 'csv', 'json', 'md']:
+            # Format specified
+            format_arg = first_arg
+            num_runs = int(sys.argv[2]) if len(sys.argv) > 2 else 10
+            
+            # Determine which functions to run
+            if format_arg == 'all':
+                # Run all 15 functions
+                function_names = 'all'
+                export_format = 'all'
+            else:
+                # Run all functions but export in specific format
+                function_names = 'all'
+                export_format = format_arg
+        else:
+            # Assume it's a function name
+            function_names = sys.argv[1]
+            export_format = sys.argv[2].lower() if len(sys.argv) > 2 else 'all'
+            num_runs = int(sys.argv[3]) if len(sys.argv) > 3 else 10
+        
+        print("\n🔬 Export Results Utility")
         print("="*60)
-        print(f"Format: {format_arg}")
-        print(f"Runs: {num_runs}")
+        print(f"Functions: {'All 15 functions' if function_names == 'all' else function_names}")
+        print(f"Export Format: {export_format}")
+        print(f"Runs per function: {num_runs}")
         
-        # Run quick test with 3 functions
-        test_functions = ['Sphere', 'Rastrigin', 'Ackley']
-        run_and_export(test_functions, num_runs, format_arg)
+        run_and_export(function_names, num_runs, export_format)
     else:
-        print("\nExport Results Utility")
+        print("\n🔬 Export Results Utility")
         print("="*60)
         print("\nUsage:")
-        print("  python export_results.py [format] [num_runs]")
+        print("  python export_results.py [selection] [format] [num_runs]")
+        print("\nSelection:")
+        print("  all              - Run all 15 functions (default)")
+        print("  <function_name>  - Run specific function (e.g., 'Sphere')")
         print("\nFormats:")
         print("  all  - Export to CSV, JSON, and Markdown (default)")
         print("  csv  - Export to CSV only")
@@ -220,6 +247,11 @@ if __name__ == "__main__":
         print("  md   - Export to Markdown only")
         print("\nExamples:")
         print("  python export_results.py all 30")
-        print("  python export_results.py csv 20")
-        print("  python export_results.py json 10")
+        print("    → Run all 15 functions, 30 runs each, export to all formats")
+        print("\n  python export_results.py csv 20")
+        print("    → Run all 15 functions, 20 runs each, export to CSV only")
+        print("\n  python export_results.py Sphere all 10")
+        print("    → Run Sphere function only, 10 runs, export to all formats")
+        print("\n  python export_results.py Rastrigin json 15")
+        print("    → Run Rastrigin function only, 15 runs, export to JSON only")
         print("\n" + "="*60 + "\n")
