@@ -90,7 +90,7 @@ def run_multiple_experiments(func_name, num_runs=NUM_RUNS):
     history = None
     
     for run in range(num_runs):
-        seed = (run + 1) * 42
+        seed = 78345873 * (run + 1)
         if run == 0:
             best_fitness, hist = run_ga(func_name, seed, return_history=True)
             history = hist
