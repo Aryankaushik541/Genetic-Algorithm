@@ -11,22 +11,34 @@ from visualization import plot_individual_function, plot_all_functions_combined
 from config import NUM_RUNS
 
 def format_value(val):
-    """Format value - show full decimal precision"""
+    """Format value - show full decimal precision with all zeros visible"""
     if val == 0:
-        return "0.00000000000000000"
-    elif val < 1e-15:
-        # Very small - show with max precision
-        return f"{val:.17f}"
-    elif val < 1e-10:
-        return f"{val:.15f}"
-    elif val < 1e-5:
-        return f"{val:.12f}"
-    elif val < 0.001:
-        return f"{val:.10f}"
-    elif val < 1:
-        return f"{val:.8f}"
-    else:
-        return f"{val:.6f}"
+        return "0"
+    
+    # Convert to string to check magnitude
+    str_val = f"{val:.2e}"  # Get scientific notation to determine magnitude
+    
+    # Extract exponent
+    if 'e' in str_val:
+        mantissa, exponent = str_val.split('e')
+        exp_val = int(exponent)
+        
+        # For very small numbers (negative exponent), show full decimal
+        if exp_val < 0:
+            # Calculate number of decimal places needed
+            decimal_places = abs(exp_val) + 15  # Extra precision
+            formatted = f"{val:.{decimal_places}f}"
+            # Remove trailing zeros but keep significant digits
+            formatted = formatted.rstrip('0').rstrip('.')
+            return formatted
+        else:
+            # For larger numbers, use reasonable precision
+            if val < 1:
+                return f"{val:.15f}".rstrip('0').rstrip('.')
+            else:
+                return f"{val:.6f}".rstrip('0').rstrip('.')
+    
+    return f"{val:.15f}".rstrip('0').rstrip('.')
 
 def print_menu():
     print("\n" + "="*60)
