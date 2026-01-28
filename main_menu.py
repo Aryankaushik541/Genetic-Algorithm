@@ -11,17 +11,11 @@ from visualization import plot_individual_function, plot_all_functions_combined
 from config import NUM_RUNS
 
 def format_value(val):
-    """Format value with proper precision"""
-    if val == 0:
+    """Format value - always show 8 decimals"""
+    if val < 1e-8:
         return "0.00000000"
-    elif val < 1e-6:
-        return f"{val:.2e}"
-    elif val < 0.001:
-        return f"{val:.8f}"
-    elif val < 1:
-        return f"{val:.6f}"
     else:
-        return f"{val:.4f}"
+        return f"{val:.8f}"
 
 def print_menu():
     print("\n" + "="*60)
@@ -99,6 +93,7 @@ def show_all_results(all_results, execution_time):
     print(f"\n{'='*80}")
     print(f"⚡ Time: {execution_time:.2f}s")
     print(f"✓ Lower values = Better performance")
+    print(f"✓ Values < 0.00000100 = Excellent!")
     print(f"{'='*80}\n")
 
 def run_single_function():
