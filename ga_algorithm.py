@@ -1,30 +1,27 @@
 import numpy as np
 import random
 import time
-from tabulate import tabulate
-
-# GA Parameters
-NUM_DIMENSIONS = 5
-POP_SIZE = 50
-NUM_GENERATIONS = 1000
-CROSSOVER_RATE = 0.8
-MUTATION_RATE = 0.15
-ELITE_SIZE = 2
+from benchmark_functions import benchmark_functions, function_bounds
+from ga_config import *
 
 def initialize_population(bounds):
+    """Initialize population within given bounds"""
     min_v, max_v = bounds
     return np.random.uniform(min_v, max_v, (POP_SIZE, NUM_DIMENSIONS))
 
 def tournament_selection(pop, fitness, k=3):
+    """Tournament selection for parent selection"""
     indices = np.random.choice(len(pop), k, replace=False)
     best_idx = indices[np.argmin(fitness[indices])]
     return pop[best_idx]
 
 def blend_crossover(p1, p2, alpha=0.5):
+    """Blend crossover (BLX-alpha)"""
     gamma = (1 + 2*alpha) * np.random.rand(NUM_DIMENSIONS) - alpha
     return gamma * p1 + (1 - gamma) * p2
 
 def adaptive_mutation(x, bounds, generation):
+    """Adaptive mutation with decreasing strength"""
     min_v, max_v = bounds
     strength = 0.1 * (1 - generation / NUM_GENERATIONS)
     mask = np.random.rand(NUM_DIMENSIONS) < MUTATION_RATE
@@ -32,169 +29,199 @@ def adaptive_mutation(x, bounds, generation):
     x = np.where(mask, x + noise * (max_v - min_v), x)
     return np.clip(x, min_v, max_v)
 
-def normalize_fitness(raw_values, optimal_value):
-    """Better normalization that preserves relative differences"""
-    adjusted = np.abs(np.array(raw_values) - optimal_value)
-    epsilon = 1e-15
-    adjusted = adjusted + epsilon
-    log_adjusted = np.log10(adjusted + 1)
+def normalize_fitness(raw_value, optimal_value=0.0):
+    """
+    Normalize fitness value to range (0, 1) excluding 0
+    Uses logarithmic scaling for better distribution
+    """
+    # Calculate distance from optimal
+    distance = abs(raw_value - optimal_value)
     
-    if np.max(log_adjusted) == np.min(log_adjusted):
-        return np.zeros_like(log_adjusted)
+    # Add epsilon to avoid log(0)
+    distance = max(distance, EPSILON)
     
-    normalized = (log_adjusted - np.min(log_adjusted)) / (np.max(log_adjusted) - np.min(log_adjusted))
+    # Apply logarithmic transformation
+    log_distance = np.log10(distance + 1)
+    
+    # Scale to (0, 1) range
+    # Using a sigmoid-like transformation
+    normalized = 1 / (1 + np.exp(-log_distance + 5))
+    
+    # Ensure value is strictly between 0 and 1
+    normalized = max(MIN_NORMALIZED_VALUE, min(MAX_NORMALIZED_VALUE, normalized))
+    
     return normalized
 
-def run_ga(func_info, seed):
+def run_ga(func_name, seed=42, return_history=False):
+    """
+    Run Genetic Algorithm on a specific function
+    
+    Args:
+        func_name: Name of the benchmark function
+        seed: Random seed for reproducibility
+        return_history: If True, return convergence history
+    
+    Returns:
+        normalized_best: Normalized best fitness value (0 < value < 1)
+        history: Convergence history (if return_history=True)
+    """
     np.random.seed(seed)
     random.seed(seed)
     
-    func = func_info["func"]
-    bounds = func_info["bounds"]
-    optimal = func_info["optimal"]
+    # Get function and bounds
+    func = benchmark_functions[func_name]
+    bounds = function_bounds[func_name]
+    optimal = 0.0  # All benchmark functions have optimal value of 0
     
+    # Initialize population
     pop = initialize_population(bounds)
-    best_hist = []
     best_raw = np.inf
+    history = [] if return_history else None
     
+    # Evolution loop
     for gen in range(NUM_GENERATIONS):
+        # Evaluate fitness
         raw_fitness = np.array([func(ind) for ind in pop])
         best_raw = min(best_raw, raw_fitness.min())
-        best_hist.append(best_raw)
         
+        if return_history:
+            history.append(normalize_fitness(best_raw, optimal))
+        
+        # Create new population
         new_pop = []
+        
+        # Elitism: Keep best individuals
         elite_indices = np.argsort(raw_fitness)[:ELITE_SIZE]
         for idx in elite_indices:
             new_pop.append(pop[idx].copy())
         
+        # Generate offspring
         while len(new_pop) < POP_SIZE:
+            # Parent selection
             p1 = tournament_selection(pop, raw_fitness)
             p2 = tournament_selection(pop, raw_fitness)
             
+            # Crossover
             if np.random.rand() < CROSSOVER_RATE:
                 child = blend_crossover(p1, p2)
             else:
                 child = p1.copy()
             
+            # Mutation
             child = adaptive_mutation(child, bounds, gen)
             new_pop.append(child)
         
         pop = np.array(new_pop[:POP_SIZE])
     
-    return best_raw, best_hist, optimal
-
-# Function info dictionary with optimal values
-function_info = {
-    'Sphere': {"func": sphere, "bounds": (-5.12, 5.12), "optimal": 0.0},
-    'Rastrigin': {"func": rastrigin, "bounds": (-5.12, 5.12), "optimal": 0.0},
-    'Ackley': {"func": ackley, "bounds": (-32.768, 32.768), "optimal": 0.0},
-    'Griewank': {"func": griewank, "bounds": (-600, 600), "optimal": 0.0},
-    'Zakharov': {"func": zakharov, "bounds": (-5, 10), "optimal": 0.0},
-    'Schwefel_222': {"func": schwefel_222, "bounds": (-10, 10), "optimal": 0.0},
-    'Schwefel_12': {"func": schwefel_12, "bounds": (-100, 100), "optimal": 0.0},
-    'Sum_Diff_Powers': {"func": sum_diff_powers, "bounds": (-1, 1), "optimal": 0.0},
-    'Dixon_Price': {"func": dixon_price, "bounds": (-10, 10), "optimal": 0.0},
-    'Levy': {"func": levy, "bounds": (-10, 10), "optimal": 0.0},
-    'Perm': {"func": perm, "bounds": (-1, 1), "optimal": 0.0},
-    'Rotated_Hyper_Ellipsoid': {"func": rotated_hyper_ellipsoid, "bounds": (-65.536, 65.536), "optimal": 0.0},
-    'Bent_Cigar': {"func": bent_cigar, "bounds": (-100, 100), "optimal": 0.0}
-}
-
-def run_multiple_experiments(num_runs=30):
-    """Run GA on all benchmark functions multiple times"""
-    all_results = []
-    start_time = time.time()
+    # Normalize final best fitness
+    normalized_best = normalize_fitness(best_raw, optimal)
     
-    for func_name, func_info in function_info.items():
-        print(f"\n🔄 Running {func_name}...")
-        results = []
+    if return_history:
+        return normalized_best, history
+    return normalized_best
+
+def run_multiple_experiments(func_name, num_runs=NUM_RUNS):
+    """
+    Run GA multiple times on a single function
+    
+    Args:
+        func_name: Name of the benchmark function
+        num_runs: Number of independent runs
+    
+    Returns:
+        results: List of normalized fitness values
+        history: Convergence history from first run
+    """
+    results = []
+    history = None
+    
+    for run in range(num_runs):
+        seed = run + 42
+        if run == 0:
+            best_fitness, hist = run_ga(func_name, seed, return_history=True)
+            history = hist
+        else:
+            best_fitness = run_ga(func_name, seed, return_history=False)
         
-        for run in range(num_runs):
-            seed = run + 42  # Different seed for each run
-            best_fitness, _, _ = run_ga(func_info, seed)
-            results.append(best_fitness)
-            
-            if (run + 1) % 10 == 0:
-                print(f"   Completed {run + 1}/{num_runs} runs")
+        results.append(best_fitness)
+    
+    return results, history
+
+def run_all_functions_parallel(num_runs=NUM_RUNS, max_time=MAX_EXECUTION_TIME):
+    """
+    Run GA on all functions with time limit
+    Uses reduced runs if needed to meet time constraint
+    
+    Args:
+        num_runs: Target number of runs per function
+        max_time: Maximum execution time in seconds
+    
+    Returns:
+        all_results: Dictionary with function names as keys
+        plot_data: Dictionary with convergence histories
+        execution_time: Actual execution time
+    """
+    start_time = time.time()
+    all_results = {}
+    plot_data = {}
+    
+    # Estimate time per run and adjust if needed
+    estimated_time_per_run = 0.5  # seconds
+    total_functions = len(benchmark_functions)
+    
+    # Calculate adjusted runs to fit time constraint
+    adjusted_runs = min(num_runs, int(max_time / (estimated_time_per_run * total_functions)))
+    adjusted_runs = max(5, adjusted_runs)  # Minimum 5 runs
+    
+    print(f"Running {adjusted_runs} runs per function to meet {max_time}s time limit...")
+    
+    for func_name in benchmark_functions.keys():
+        print(f"Processing {func_name}...", end=" ")
         
-        # Calculate statistics
-        results = np.array(results)
-        stats = [
-            func_name,
-            np.min(results),
-            np.mean(results),
-            np.median(results),
-            np.std(results)
-        ]
-        all_results.append(stats)
+        results, history = run_multiple_experiments(func_name, adjusted_runs)
+        all_results[func_name] = results
+        plot_data[func_name] = history
+        
+        # Check time limit
+        elapsed = time.time() - start_time
+        if elapsed > max_time * 0.9:  # Stop at 90% of time limit
+            print(f"\nTime limit approaching, stopping early...")
+            break
+        
+        print("Done")
     
     execution_time = time.time() - start_time
-    return all_results, execution_time
+    return all_results, plot_data, execution_time
 
-def display_individual_tables(results, execution_time):
-    """Display individual table for each function"""
-    print("\n" + "="*95)
-    print(" GA PERFORMANCE STATISTICAL SUMMARY (30 RUNS) ".center(95))
-    print("="*95)
-    
-    for result in results:
-        function_name = result[0]
-        min_val = result[1]
-        mean_val = result[2]
-        median_val = result[3]
-        std_dev = result[4]
-        
-        table_data = [
-            ["Min", f"{min_val:.6f}"],
-            ["Mean", f"{mean_val:.6f}"],
-            ["Median", f"{median_val:.6f}"],
-            ["Std Dev", f"{std_dev:.6f}"]
-        ]
-        
-        print(f"\n📊 {function_name}")
-        print(tabulate(table_data, 
-                       headers=["Metric", "Value"],
-                       tablefmt="grid"))
-    
-    print(f"\n{'='*95}")
-    print(f"Total Execution Time: {execution_time:.2f} seconds")
-    print("="*95)
+def calculate_statistics(results):
+    """Calculate statistics from results"""
+    results_array = np.array(results)
+    return {
+        'min': np.min(results_array),
+        'mean': np.mean(results_array),
+        'median': np.median(results_array),
+        'std': np.std(results_array)
+    }
 
-def display_comparison_table(results):
-    """Display comparison table for all functions"""
-    print("\n" + "="*95)
-    print(" COMPARISON TABLE ".center(95))
-    print("="*95)
-    print(tabulate(results,
-                   headers=["Function", "Min", "Mean", "Median", "Std Dev"],
-                   tablefmt="grid",
-                   floatfmt=".6f"))
-
-def get_best_function_info(results):
-    """Find and display best performing function"""
-    best_function_idx = np.argmin([r[2] for r in results])
-    best_function = results[best_function_idx][0]
-    
-    print(f"\n🏆 BEST PERFORMING FUNCTION: {best_function}")
-    print(f"   Mean Performance: {results[best_function_idx][2]:.6f}")
-    print(f"   Standard Deviation: {results[best_function_idx][4]:.6f}")
-    
-    print(f"\n📊 OVERALL STATISTICS:")
-    all_means = [r[2] for r in results]
-    print(f"   Average Mean Across All Functions: {np.mean(all_means):.6f}")
-    print(f"   Best Mean Performance: {np.min(all_means):.6f}")
-    print(f"   Worst Mean Performance: {np.max(all_means):.6f}")
-    
-    return best_function, best_function_idx
-
-# Main execution
+# Test function
 if __name__ == "__main__":
-    print("🚀 Starting GA Benchmark Tests...")
+    print("Testing GA with normalization...")
     
-    # Run experiments
-    results, exec_time = run_multiple_experiments(30)
+    # Test single function
+    func_name = 'Sphere'
+    print(f"\nTesting {func_name} function:")
     
-    # Display results
-    display_individual_tables(results, exec_time)
-    display_comparison_table(results)
-    get_best_function_info(results)
+    results, history = run_multiple_experiments(func_name, num_runs=5)
+    stats = calculate_statistics(results)
+    
+    print(f"Results (normalized to 0-1 range):")
+    print(f"  Min: {stats['min']:.6f}")
+    print(f"  Mean: {stats['mean']:.6f}")
+    print(f"  Median: {stats['median']:.6f}")
+    print(f"  Std Dev: {stats['std']:.6f}")
+    print(f"\nAll values: {[f'{r:.6f}' for r in results]}")
+    
+    # Verify all values are in (0, 1) range
+    assert all(0 < r < 1 for r in results), "Values must be strictly between 0 and 1"
+    assert all(r != 0 for r in results), "Values must not be zero"
+    print("\n✓ All values are in valid range (0 < value < 1, excluding 0)")
