@@ -69,11 +69,11 @@ def display_individual_results(func_name, results, history, execution_time):
 
 def display_combined_results(all_results, execution_time):
     """Display combined results for all functions"""
-    print("\n" + "="*95)
-    print(" COMBINED RESULTS - ALL FUNCTIONS ".center(95))
-    print("="*95)
+    print("\n" + "="*100)
+    print(" COMBINED RESULTS - ALL 15 FUNCTIONS ".center(100))
+    print("="*100)
     
-    # Prepare table data
+    # Prepare table data - sort by mean performance
     table_data = []
     for func_name, results in all_results.items():
         stats = calculate_statistics(results)
@@ -85,18 +85,25 @@ def display_combined_results(all_results, execution_time):
             f"{stats['std']:.6f}"
         ])
     
-    # Sort by mean performance
+    # Sort by mean performance (best first)
     table_data.sort(key=lambda x: float(x[2]))
     
-    print(tabulate(table_data,
-                   headers=["Function", "Min", "Mean", "Median", "Std Dev"],
+    # Add rank column
+    ranked_data = []
+    for i, row in enumerate(table_data, 1):
+        rank_emoji = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}."
+        ranked_data.append([rank_emoji] + row)
+    
+    print(tabulate(ranked_data,
+                   headers=["Rank", "Function", "Min", "Mean", "Median", "Std Dev"],
                    tablefmt="grid"))
     
-    print(f"\n{'='*95}")
+    print(f"\n{'='*100}")
     print(f"Total Execution Time: {execution_time:.2f} seconds")
     print(f"Functions Evaluated: {len(all_results)}")
     print(f"Total Runs: {sum(len(r) for r in all_results.values())}")
-    print("="*95)
+    print(f"Runs per Function: {len(list(all_results.values())[0])}")
+    print("="*100)
     
     # Find best performing function
     best_func = min(all_results.items(), key=lambda x: calculate_statistics(x[1])['mean'])
@@ -106,7 +113,16 @@ def display_combined_results(all_results, execution_time):
     print(f"   Mean Performance: {best_stats['mean']:.6f}")
     print(f"   Standard Deviation: {best_stats['std']:.6f}")
     
+    # Find most challenging function
+    worst_func = max(all_results.items(), key=lambda x: calculate_statistics(x[1])['mean'])
+    worst_stats = calculate_statistics(worst_func[1])
+    
+    print(f"\n⚠️  MOST CHALLENGING FUNCTION: {worst_func[0]}")
+    print(f"   Mean Performance: {worst_stats['mean']:.6f}")
+    print(f"   Standard Deviation: {worst_stats['std']:.6f}")
+    
     print("\n✓ All values are normalized: 0 < value < 1 (excluding 0)")
+    print(f"✓ All {len(all_results)} functions completed successfully!")
 
 def run_individual_function():
     """Run and display results for a single function"""
@@ -146,19 +162,27 @@ def run_individual_function():
 
 def run_all_functions():
     """Run and display results for all functions"""
-    print(f"\n🔄 Running all {len(benchmark_functions)} functions...")
+    total_functions = len(benchmark_functions)
+    runs_per_function = 25  # Fixed to 25 runs
+    
+    print(f"\n🔄 Running all {total_functions} functions...")
     print(f"   Time limit: {MAX_EXECUTION_TIME} seconds")
-    print(f"   Target runs per function: {NUM_RUNS}")
+    print(f"   Runs per function: {runs_per_function}")
+    print(f"   Total runs: {total_functions * runs_per_function}")
     print()
     
-    # Run all functions with time limit
-    all_results, plot_data, execution_time = run_all_functions_parallel(NUM_RUNS, MAX_EXECUTION_TIME)
+    # Run all functions with 25 runs each
+    all_results, plot_data, execution_time = run_all_functions_parallel(
+        num_runs=runs_per_function, 
+        max_time=MAX_EXECUTION_TIME
+    )
     
     # Display combined results
     display_combined_results(all_results, execution_time)
     
     # Generate combined visualization
-    print("\n📊 Generating combined visualization...")
+    print("\n📊 Generating comprehensive visualization...")
+    print("   This will show all 15 functions in 4 detailed graphs...")
     plot_all_functions_combined(all_results, plot_data)
     
     print("\n✓ Analysis complete!")
