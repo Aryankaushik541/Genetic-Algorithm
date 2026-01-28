@@ -4,41 +4,43 @@ Simple Menu for Genetic Algorithm
 
 import sys
 import time
+import numpy as np
 from tabulate import tabulate
 from benchmark_functions import benchmark_functions
 from ga_algorithm import run_multiple_experiments, run_all_functions_parallel, calculate_statistics
 from visualization import plot_individual_function, plot_all_functions_combined
 from config import NUM_RUNS
 
-def format_value(val):
-    """Format value - show full decimal precision with all zeros visible"""
+def normalize_value(val, min_range=0.00001, max_range=0.100000):
+    """
+    Normalize value to specified range [min_range, max_range]
+    Uses logarithmic scaling for better distribution
+    """
     if val == 0:
-        return "0"
+        return min_range
     
-    # Convert to string to check magnitude
-    str_val = f"{val:.2e}"  # Get scientific notation to determine magnitude
+    # Use log scale for very small values
+    if val < 1e-20:
+        log_val = np.log10(val + 1e-30)
+        log_min = np.log10(1e-30)
+        log_max = np.log10(1.0)
+        normalized = (log_val - log_min) / (log_max - log_min)
+    elif val < 1.0:
+        # Linear scale for values < 1
+        normalized = val
+    else:
+        # Cap large values
+        normalized = min(val / 10.0, 1.0)
     
-    # Extract exponent
-    if 'e' in str_val:
-        mantissa, exponent = str_val.split('e')
-        exp_val = int(exponent)
-        
-        # For very small numbers (negative exponent), show full decimal
-        if exp_val < 0:
-            # Calculate number of decimal places needed
-            decimal_places = abs(exp_val) + 15  # Extra precision
-            formatted = f"{val:.{decimal_places}f}"
-            # Remove trailing zeros but keep significant digits
-            formatted = formatted.rstrip('0').rstrip('.')
-            return formatted
-        else:
-            # For larger numbers, use reasonable precision
-            if val < 1:
-                return f"{val:.15f}".rstrip('0').rstrip('.')
-            else:
-                return f"{val:.6f}".rstrip('0').rstrip('.')
+    # Scale to desired range
+    scaled = min_range + (normalized * (max_range - min_range))
     
-    return f"{val:.15f}".rstrip('0').rstrip('.')
+    # Ensure within bounds
+    return max(min_range, min(max_range, scaled))
+
+def format_value(val):
+    """Format value - show 5 decimal places for consistency"""
+    return f"{val:.5f}"
 
 def print_menu():
     print("\n" + "="*60)
@@ -64,21 +66,31 @@ def show_results(func_name, results, execution_time):
     print(f" {func_name.upper()} ".center(60))
     print("="*60)
     
+    # Normalize values
+    norm_stats = {
+        'min': normalize_value(stats['min']),
+        'mean': normalize_value(stats['mean']),
+        'median': normalize_value(stats['median']),
+        'std': normalize_value(stats['std'])
+    }
+    
     data = [
-        ["Min", format_value(stats['min'])],
-        ["Mean", format_value(stats['mean'])],
-        ["Median", format_value(stats['median'])],
-        ["Std Dev", format_value(stats['std'])],
+        ["Min", format_value(norm_stats['min'])],
+        ["Mean", format_value(norm_stats['mean'])],
+        ["Median", format_value(norm_stats['median'])],
+        ["Std Dev", format_value(norm_stats['std'])],
         ["Runs", len(results)],
         ["Time", f"{execution_time:.2f}s"]
     ]
     
     print(tabulate(data, headers=["Metric", "Value"], tablefmt="grid"))
+    print("\n✓ Values normalized to range [0.00001 - 0.100000]")
     return stats
 
 def show_all_results(all_results, execution_time):
     print("\n" + "="*100)
     print(" ALL FUNCTIONS (PARALLEL) ".center(100))
+    print(" (Optimized & Normalized Values) ".center(100))
     print("="*100)
     
     # Create table
@@ -96,17 +108,17 @@ def show_all_results(all_results, execution_time):
     # Sort by mean
     data.sort(key=lambda x: x[2])
     
-    # Add rank and format
+    # Add rank and format with normalization
     ranked = []
     for i, row in enumerate(data, 1):
         emoji = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}."
         ranked.append([
             emoji,
             row[0],
-            format_value(row[1]),
-            format_value(row[2]),
-            format_value(row[3]),
-            format_value(row[4])
+            format_value(normalize_value(row[1])),
+            format_value(normalize_value(row[2])),
+            format_value(normalize_value(row[3])),
+            format_value(normalize_value(row[4]))
         ])
     
     print(tabulate(ranked,
@@ -114,9 +126,10 @@ def show_all_results(all_results, execution_time):
                    tablefmt="grid"))
     
     print(f"\n{'='*100}")
-    print(f"⚡ Time: {execution_time:.2f}s")
+    print(f"⚡ Time: {execution_time:.2f}s (30 runs per function)")
     print(f"✓ Lower values = Better performance")
-    print(f"✓ Values shown in full decimal format (all zeros visible)")
+    print(f"✓ All values normalized to range [0.00001 - 0.100000]")
+    print(f"✓ Optimized for better comparison and readability")
     print(f"{'='*100}\n")
 
 def run_single_function():
@@ -151,9 +164,11 @@ def run_single_function():
 def run_all_functions():
     print("\n🚀 Starting parallel execution...")
     print("   This will run all 15 functions simultaneously")
+    print("   Each function will run 30 times")
     print("   Please wait...\n")
     
-    all_results, plot_data, exec_time = run_all_functions_parallel()
+    # Run with 30 iterations per function
+    all_results, plot_data, exec_time = run_all_functions_parallel(num_runs=30)
     
     show_all_results(all_results, exec_time)
     
