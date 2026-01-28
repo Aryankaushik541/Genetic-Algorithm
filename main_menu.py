@@ -6,6 +6,7 @@ Provides options to run individual functions or all functions together
 import sys
 import time
 import numpy as np
+from multiprocessing import cpu_count
 from tabulate import tabulate
 from benchmark_functions import benchmark_functions
 from ga_algorithm import run_multiple_experiments, run_all_functions_parallel, calculate_statistics
@@ -24,7 +25,7 @@ def print_menu():
     """Print main menu options"""
     print("\nSelect an option:")
     print("1. Run individual function (separate table & graph for each)")
-    print("2. Run all functions together (combined table & graph)")
+    print("2. Run all functions together (PARALLEL - combined table & graph)")
     print("3. Exit")
     print()
 
@@ -70,7 +71,7 @@ def display_individual_results(func_name, results, history, execution_time):
 def display_combined_results(all_results, execution_time):
     """Display combined results for all functions"""
     print("\n" + "="*100)
-    print(" COMBINED RESULTS - ALL 15 FUNCTIONS ".center(100))
+    print(" COMBINED RESULTS - ALL 15 FUNCTIONS (PARALLEL EXECUTION) ".center(100))
     print("="*100)
     
     # Prepare table data - sort by mean performance
@@ -99,10 +100,16 @@ def display_combined_results(all_results, execution_time):
                    tablefmt="grid"))
     
     print(f"\n{'='*100}")
-    print(f"Total Execution Time: {execution_time:.2f} seconds")
-    print(f"Functions Evaluated: {len(all_results)}")
-    print(f"Total Runs: {sum(len(r) for r in all_results.values())}")
-    print(f"Runs per Function: {len(list(all_results.values())[0])}")
+    print(f"⚡ Parallel Execution Time: {execution_time:.2f} seconds")
+    print(f"📊 Functions Evaluated: {len(all_results)}")
+    print(f"🔢 Total Runs: {sum(len(r) for r in all_results.values())}")
+    print(f"🎯 Runs per Function: {len(list(all_results.values())[0])}")
+    print(f"💻 CPU Cores Used: {min(cpu_count(), len(all_results))}")
+    
+    # Calculate speedup estimate
+    estimated_sequential_time = execution_time * min(cpu_count(), len(all_results))
+    print(f"⚡ Estimated Speedup: ~{min(cpu_count(), len(all_results))}x faster than sequential")
+    print(f"   (Sequential would take ~{estimated_sequential_time:.1f}s)")
     print("="*100)
     
     # Find best performing function
@@ -122,7 +129,7 @@ def display_combined_results(all_results, execution_time):
     print(f"   Standard Deviation: {worst_stats['std']:.6f}")
     
     print("\n✓ All values are normalized: 0 < value < 1 (excluding 0)")
-    print(f"✓ All {len(all_results)} functions completed successfully!")
+    print(f"✓ All {len(all_results)} functions completed successfully IN PARALLEL!")
 
 def run_individual_function():
     """Run and display results for a single function"""
@@ -161,17 +168,24 @@ def run_individual_function():
     print("\n✓ Analysis complete!")
 
 def run_all_functions():
-    """Run and display results for all functions"""
+    """Run and display results for all functions IN PARALLEL"""
     total_functions = len(benchmark_functions)
     runs_per_function = 25  # Fixed to 25 runs
     
-    print(f"\n🔄 Running all {total_functions} functions...")
-    print(f"   Time limit: {MAX_EXECUTION_TIME} seconds")
-    print(f"   Runs per function: {runs_per_function}")
-    print(f"   Total runs: {total_functions * runs_per_function}")
+    print(f"\n{'='*60}")
+    print(" PARALLEL EXECUTION MODE ".center(60))
+    print(f"{'='*60}")
+    print(f"\n⚡ All {total_functions} functions will run SIMULTANEOUSLY")
+    print(f"💻 Available CPU cores: {cpu_count()}")
+    print(f"🎯 Runs per function: {runs_per_function}")
+    print(f"🔢 Total runs: {total_functions * runs_per_function}")
+    print(f"⏱️  Expected time: ~{MAX_EXECUTION_TIME} seconds")
+    print(f"\n{'='*60}\n")
+    
+    input("Press Enter to start parallel execution...")
     print()
     
-    # Run all functions with 25 runs each
+    # Run all functions in parallel
     all_results, plot_data, execution_time = run_all_functions_parallel(
         num_runs=runs_per_function, 
         max_time=MAX_EXECUTION_TIME
@@ -185,7 +199,7 @@ def run_all_functions():
     print("   This will show all 15 functions in 4 detailed graphs...")
     plot_all_functions_combined(all_results, plot_data)
     
-    print("\n✓ Analysis complete!")
+    print("\n✓ Parallel analysis complete!")
 
 def main():
     """Main application loop"""
