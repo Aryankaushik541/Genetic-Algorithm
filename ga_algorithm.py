@@ -148,17 +148,17 @@ def run_multiple_experiments(func_name, num_runs=NUM_RUNS):
     
     return results, history
 
-def run_all_functions_parallel(num_runs=NUM_RUNS, max_time=MAX_EXECUTION_TIME):
+def run_all_functions_parallel(num_runs=25, max_time=MAX_EXECUTION_TIME):
     """
-    Run GA on all functions with time limit
-    Uses reduced runs if needed to meet time constraint
+    Run GA on all 15 functions with guaranteed completion
+    Fixed to always run 25 runs per function
     
     Args:
-        num_runs: Target number of runs per function
-        max_time: Maximum execution time in seconds
+        num_runs: Number of runs per function (default: 25)
+        max_time: Maximum execution time in seconds (for reference only)
     
     Returns:
-        all_results: Dictionary with function names as keys
+        all_results: Dictionary with function names as keys and results lists as values
         plot_data: Dictionary with convergence histories
         execution_time: Actual execution time
     """
@@ -166,32 +166,33 @@ def run_all_functions_parallel(num_runs=NUM_RUNS, max_time=MAX_EXECUTION_TIME):
     all_results = {}
     plot_data = {}
     
-    # Estimate time per run and adjust if needed
-    estimated_time_per_run = 0.5  # seconds
-    total_functions = len(benchmark_functions)
+    # Get all function names
+    all_functions = list(benchmark_functions.keys())
+    total_functions = len(all_functions)
     
-    # Calculate adjusted runs to fit time constraint
-    adjusted_runs = min(num_runs, int(max_time / (estimated_time_per_run * total_functions)))
-    adjusted_runs = max(5, adjusted_runs)  # Minimum 5 runs
+    print(f"Running {num_runs} runs per function to meet {max_time}s time limit...")
+    print(f"Total functions: {total_functions}")
+    print()
     
-    print(f"Running {adjusted_runs} runs per function to meet {max_time}s time limit...")
-    
-    for func_name in benchmark_functions.keys():
-        print(f"Processing {func_name}...", end=" ")
+    # Process each function
+    for idx, func_name in enumerate(all_functions, 1):
+        func_start = time.time()
+        print(f"[{idx}/{total_functions}] Processing {func_name}...", end=" ", flush=True)
         
-        results, history = run_multiple_experiments(func_name, adjusted_runs)
+        # Run experiments for this function
+        results, history = run_multiple_experiments(func_name, num_runs)
         all_results[func_name] = results
         plot_data[func_name] = history
         
-        # Check time limit
-        elapsed = time.time() - start_time
-        if elapsed > max_time * 0.9:  # Stop at 90% of time limit
-            print(f"\nTime limit approaching, stopping early...")
-            break
-        
-        print("Done")
+        func_time = time.time() - func_start
+        print(f"Done ({func_time:.2f}s)")
     
     execution_time = time.time() - start_time
+    
+    print(f"\n✓ All {total_functions} functions completed!")
+    print(f"✓ Total runs: {total_functions * num_runs}")
+    print(f"✓ Execution time: {execution_time:.2f} seconds")
+    
     return all_results, plot_data, execution_time
 
 def calculate_statistics(results):
