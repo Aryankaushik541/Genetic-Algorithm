@@ -13,6 +13,7 @@ A comprehensive Genetic Algorithm implementation for optimizing 15 benchmark fun
 - **Blazing Fast**: Completes all 375 runs (15 functions × 25 runs) in ~2-5 seconds on multi-core systems
 - **Statistical Analysis**: Min, Mean, Median, and Standard Deviation with 25-30 runs
 - **Advanced Visualization**: Convergence plots, performance comparisons, and distribution analysis
+- **Export Utilities**: Export results to CSV, JSON, and Markdown formats
 - **Utility Scripts**: Quick testing, batch analysis, and results export tools
 
 ## ⚡ Parallel Execution
@@ -109,10 +110,27 @@ python quick_test.py Sphere
 
 # Compare multiple functions
 python quick_test.py compare Sphere Rastrigin Ackley
-
-# Export results to CSV/JSON/Markdown
-python export_results.py all 30
 ```
+
+### Export Results
+
+Export results to CSV, JSON, and Markdown formats:
+
+```bash
+# Export all 15 functions to all formats (CSV, JSON, MD)
+python export_results.py all 30
+
+# Export all functions to CSV only
+python export_results.py csv 20
+
+# Export specific function to all formats
+python export_results.py Sphere all 10
+
+# Export specific function to JSON only
+python export_results.py Rastrigin json 15
+```
+
+**See [EXPORT_USAGE.md](EXPORT_USAGE.md) for complete export documentation.**
 
 ## 📊 Output Examples
 
@@ -166,6 +184,7 @@ MAX_EXECUTION_TIME = 20    # Maximum execution time in seconds
 Genetic-Algorithm/
 ├── 📖 Documentation
 │   ├── README.md              # This file
+│   ├── EXPORT_USAGE.md        # Export utility guide
 │   └── LICENSE                # MIT License
 │
 ├── 🎮 Main Application
@@ -209,24 +228,53 @@ Genetic-Algorithm/
 
 ## 🛠️ Utility Scripts
 
-### Quick Test
+### 1. Quick Test
 ```bash
+# Test single function with 10 runs
 python quick_test.py Sphere 10
+
+# Compare multiple functions
+python quick_test.py compare Sphere Rastrigin Ackley
 ```
 Fast testing of individual functions without full menu.
 
-### Batch Analysis
+### 2. Batch Analysis
 ```python
 from batch_analysis import batch_test_functions
+
+# Test multiple functions
 results = batch_test_functions(['Sphere', 'Rastrigin'], num_runs=10)
 ```
 Automated batch testing and configuration comparison.
 
-### Export Results
+### 3. Export Results
 ```bash
+# Export all 15 functions to all formats (CSV, JSON, MD)
 python export_results.py all 30
+
+# Export all functions to CSV only
+python export_results.py csv 20
+
+# Export specific function to all formats
+python export_results.py Sphere all 10
+
+# Export specific function to JSON only
+python export_results.py Rastrigin json 15
 ```
-Export results to CSV, JSON, and Markdown formats.
+
+**Export Formats:**
+- **CSV** - For Excel/spreadsheet analysis
+- **JSON** - For programmatic access
+- **Markdown** - For documentation/reports
+
+**Output Files:**
+```
+ga_results_20240128_153045.csv
+ga_results_20240128_153045.json
+ga_results_20240128_153045.md
+```
+
+**See [EXPORT_USAGE.md](EXPORT_USAGE.md) for complete documentation.**
 
 ## 🤝 Contributing
 
@@ -253,6 +301,7 @@ This project is open source and available under the MIT License.
 ✅ **Fast Execution**: 2-5 seconds for all 375 runs  
 ✅ **Statistical Rigor**: 25-30 independent runs with i*seed randomization  
 ✅ **Professional Visualization**: Multiple graph types showing all 15 functions  
+✅ **Export Utilities**: CSV, JSON, Markdown formats  
 ✅ **Utility Scripts**: Quick testing, batch analysis, export tools  
 ✅ **UV Support**: Modern Python package management  
 ✅ **Production Ready**: Clean code, proper structure, MIT licensed
