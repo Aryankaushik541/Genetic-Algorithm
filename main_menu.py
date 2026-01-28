@@ -11,11 +11,22 @@ from visualization import plot_individual_function, plot_all_functions_combined
 from config import NUM_RUNS
 
 def format_value(val):
-    """Format value - always show 8 decimals"""
-    if val < 1e-8:
-        return "0.00000000"
-    else:
+    """Format value - show full decimal precision"""
+    if val == 0:
+        return "0.00000000000000000"
+    elif val < 1e-15:
+        # Very small - show with max precision
+        return f"{val:.17f}"
+    elif val < 1e-10:
+        return f"{val:.15f}"
+    elif val < 1e-5:
+        return f"{val:.12f}"
+    elif val < 0.001:
+        return f"{val:.10f}"
+    elif val < 1:
         return f"{val:.8f}"
+    else:
+        return f"{val:.6f}"
 
 def print_menu():
     print("\n" + "="*60)
@@ -54,9 +65,9 @@ def show_results(func_name, results, execution_time):
     return stats
 
 def show_all_results(all_results, execution_time):
-    print("\n" + "="*80)
-    print(" ALL FUNCTIONS (PARALLEL) ".center(80))
-    print("="*80)
+    print("\n" + "="*100)
+    print(" ALL FUNCTIONS (PARALLEL) ".center(100))
+    print("="*100)
     
     # Create table
     data = []
@@ -90,11 +101,11 @@ def show_all_results(all_results, execution_time):
                    headers=["Rank", "Function", "Min", "Mean", "Median", "Std"],
                    tablefmt="grid"))
     
-    print(f"\n{'='*80}")
+    print(f"\n{'='*100}")
     print(f"⚡ Time: {execution_time:.2f}s")
     print(f"✓ Lower values = Better performance")
-    print(f"✓ Values < 0.00000100 = Excellent!")
-    print(f"{'='*80}\n")
+    print(f"✓ Values shown in full decimal format (all zeros visible)")
+    print(f"{'='*100}\n")
 
 def run_single_function():
     functions = show_functions()
