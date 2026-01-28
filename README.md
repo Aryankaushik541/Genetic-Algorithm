@@ -37,24 +37,6 @@ All 15 functions now run **simultaneously** instead of one-by-one using Python's
 
 ## 🚀 Installation
 
-### Using UV (Recommended)
-
-```bash
-# Install UV if not already installed
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Clone the repository
-git clone https://github.com/Aryankaushik541/Genetic-Algorithm.git
-cd Genetic-Algorithm
-
-# Create virtual environment and install dependencies
-uv venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-uv pip install -r requirements.txt
-```
-
-### Using pip
-
 ```bash
 # Clone the repository
 git clone https://github.com/Aryankaushik541/Genetic-Algorithm.git
@@ -154,18 +136,21 @@ python utils.py export Sphere 10 json
 
 ## 🔧 Configuration
 
-Edit `ga_config.py` to modify GA parameters:
+Edit `config.py` to modify GA parameters:
 
 ```python
-NUM_DIMENSIONS = 5          # Problem dimensionality
-POP_SIZE = 50              # Population size
-NUM_GENERATIONS = 1000     # Number of generations
-CROSSOVER_RATE = 0.8       # Crossover probability
-MUTATION_RATE = 0.15       # Mutation probability
-ELITE_SIZE = 2             # Number of elite individuals
-NUM_RUNS = 30              # Runs for individual analysis
-COMBINED_RUNS = 25         # Runs for parallel analysis
-MAX_EXECUTION_TIME = 20    # Maximum execution time in seconds
+# GA Parameters
+NUM_DIMENSIONS = 5
+POP_SIZE = 50
+NUM_GENERATIONS = 1000
+CROSSOVER_RATE = 0.8
+MUTATION_RATE = 0.15
+ELITE_SIZE = 2
+
+# Experiment Settings
+NUM_RUNS = 30              # For individual function
+COMBINED_RUNS = 25         # For all functions together
+MAX_EXECUTION_TIME = 20    # Seconds
 ```
 
 ## 📁 Project Structure
@@ -187,9 +172,8 @@ Genetic-Algorithm/
 │   └── utils.py               # All utilities in one simple file
 │
 └── 🔧 Configuration
-    ├── ga_config.py           # GA parameters
-    ├── requirements.txt       # Python dependencies
-    ├── pyproject.toml         # UV configuration
+    ├── config.py              # Simple configuration
+    ├── requirements.txt       # Dependencies
     └── .gitignore            # Git ignore rules
 ```
 
@@ -333,7 +317,7 @@ This project is open source and available under the MIT License.
 ✅ **Professional Visualization**: Multiple graph types showing all 15 functions  
 ✅ **Simple Utilities**: All tools in one file - `utils.py`  
 ✅ **Export Formats**: CSV, JSON, Markdown  
-✅ **UV Support**: Modern Python package management  
+✅ **Clean & Simple**: Minimal configuration, maximum efficiency  
 ✅ **Production Ready**: Clean code, proper structure, MIT licensed
 
 ---
