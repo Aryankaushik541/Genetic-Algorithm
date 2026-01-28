@@ -136,7 +136,8 @@ def run_multiple_experiments(func_name, num_runs=NUM_RUNS):
     history = None
     
     for run in range(num_runs):
-        seed = run + 42
+        # Use i*seed for better randomization across runs
+        seed = (run + 1) * 42
         if run == 0:
             best_fitness, hist = run_ga(func_name, seed, return_history=True)
             history = hist
@@ -200,7 +201,8 @@ def calculate_statistics(results):
         'min': np.min(results_array),
         'mean': np.mean(results_array),
         'median': np.median(results_array),
-        'std': np.std(results_array)
+        'std': np.std(results_array),
+        'max': np.max(results_array)
     }
 
 # Test function
@@ -225,3 +227,4 @@ if __name__ == "__main__":
     assert all(0 < r < 1 for r in results), "Values must be strictly between 0 and 1"
     assert all(r != 0 for r in results), "Values must not be zero"
     print("\n✓ All values are in valid range (0 < value < 1, excluding 0)")
+    print("✓ Using i*seed for better randomization across runs")
