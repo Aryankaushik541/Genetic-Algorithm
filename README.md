@@ -15,7 +15,7 @@ A comprehensive Genetic Algorithm implementation for optimizing 15 benchmark fun
 - **Advanced Visualization**: Convergence plots, performance comparisons, and distribution analysis
 - **Utility Scripts**: Quick testing, batch analysis, and results export tools
 
-## ⚡ Parallel Execution Highlights
+## ⚡ Parallel Execution
 
 ### Sequential vs Parallel:
 
@@ -24,9 +24,16 @@ A comprehensive Genetic Algorithm implementation for optimizing 15 benchmark fun
 | **Sequential** (old) | ~18s | 1x |
 | **Parallel** (new) | ~2.5s | **7-8x faster** |
 
-All 15 functions now run **simultaneously** instead of one-by-one!
+All 15 functions now run **simultaneously** instead of one-by-one using Python's multiprocessing module!
 
-See [PARALLEL_EXECUTION.md](PARALLEL_EXECUTION.md) for detailed information.
+**Performance by CPU Cores:**
+
+| CPU Cores | Time | Speedup |
+|-----------|------|---------|
+| 1 core    | 18.0s | 1.0x |
+| 4 cores   | 5.0s | 3.6x |
+| 8 cores   | 2.5s | **7.2x** |
+| 16 cores  | 1.5s | **12.0x** |
 
 ## 🚀 Installation
 
@@ -107,8 +114,6 @@ python quick_test.py compare Sphere Rastrigin Ackley
 python export_results.py all 30
 ```
 
-See [UTILITIES.md](UTILITIES.md) for complete utility documentation.
-
 ## 📊 Output Examples
 
 ### Option 1: Individual Function Execution
@@ -161,13 +166,6 @@ MAX_EXECUTION_TIME = 20    # Maximum execution time in seconds
 Genetic-Algorithm/
 ├── 📖 Documentation
 │   ├── README.md              # This file
-│   ├── QUICKSTART.md          # Quick setup guide
-│   ├── SAMPLE_OUTPUT.md       # Output examples
-│   ├── DEMO.md                # Visual demo
-│   ├── PARALLEL_EXECUTION.md  # Parallel execution guide
-│   ├── UTILITIES.md           # Utility scripts guide
-│   ├── FIXES_SUMMARY.md       # Recent fixes
-│   ├── CHANGELOG.md           # Version history
 │   └── LICENSE                # MIT License
 │
 ├── 🎮 Main Application
@@ -182,11 +180,11 @@ Genetic-Algorithm/
 │   ├── batch_analysis.py      # Batch testing & comparison
 │   └── export_results.py      # Results export (CSV/JSON/MD)
 │
-├── 🔧 Configuration
-│   ├── ga_config.py           # GA parameters
-│   ├── requirements.txt       # Python dependencies
-│   ├── pyproject.toml         # UV configuration
-│   └── .gitignore            # Git ignore rules
+└── 🔧 Configuration
+    ├── ga_config.py           # GA parameters
+    ├── requirements.txt       # Python dependencies
+    ├── pyproject.toml         # UV configuration
+    └── .gitignore            # Git ignore rules
 ```
 
 ## 🎯 Benchmark Functions
@@ -230,18 +228,6 @@ python export_results.py all 30
 ```
 Export results to CSV, JSON, and Markdown formats.
 
-See [UTILITIES.md](UTILITIES.md) for complete documentation.
-
-## 📚 Documentation
-
-- **[QUICKSTART.md](QUICKSTART.md)** - Get started in 3 simple steps
-- **[PARALLEL_EXECUTION.md](PARALLEL_EXECUTION.md)** - Parallel execution guide
-- **[SAMPLE_OUTPUT.md](SAMPLE_OUTPUT.md)** - See example outputs
-- **[DEMO.md](DEMO.md)** - Visual walkthrough with ASCII art
-- **[UTILITIES.md](UTILITIES.md)** - Utility scripts guide
-- **[FIXES_SUMMARY.md](FIXES_SUMMARY.md)** - Recent fixes and improvements
-- **[CHANGELOG.md](CHANGELOG.md)** - Version history
-
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
@@ -267,7 +253,6 @@ This project is open source and available under the MIT License.
 ✅ **Fast Execution**: 2-5 seconds for all 375 runs  
 ✅ **Statistical Rigor**: 25-30 independent runs with i*seed randomization  
 ✅ **Professional Visualization**: Multiple graph types showing all 15 functions  
-✅ **Comprehensive Documentation**: 8 detailed guides  
 ✅ **Utility Scripts**: Quick testing, batch analysis, export tools  
 ✅ **UV Support**: Modern Python package management  
 ✅ **Production Ready**: Clean code, proper structure, MIT licensed
