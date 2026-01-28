@@ -1,5 +1,5 @@
 """
-Optimized Genetic Algorithm Implementation
+Simple Genetic Algorithm - Optimized for Good Results
 """
 
 import numpy as np
@@ -10,172 +10,90 @@ from benchmark_functions import benchmark_functions, function_bounds
 from config import *
 
 def initialize_population(bounds):
-    """Initialize with diverse population including near-optimal solutions"""
+    """Initialize population - mix of random and near-zero"""
     min_v, max_v = bounds
     pop = []
     
-    # 50% random uniform
-    for _ in range(POP_SIZE // 2):
-        pop.append(np.random.uniform(min_v, max_v, NUM_DIMENSIONS))
-    
-    # 30% near zero (optimal region)
-    for _ in range(int(POP_SIZE * 0.3)):
-        pop.append(np.random.normal(0, 0.1, NUM_DIMENSIONS))
-    
-    # 20% strategic positions
-    for _ in range(POP_SIZE - len(pop)):
-        pop.append(np.random.uniform(min_v/2, max_v/2, NUM_DIMENSIONS))
+    # Half random, half near optimal
+    for i in range(POP_SIZE):
+        if i < POP_SIZE // 2:
+            pop.append(np.random.uniform(min_v, max_v, NUM_DIMENSIONS))
+        else:
+            pop.append(np.random.normal(0, 0.5, NUM_DIMENSIONS))
     
     return np.array(pop)
 
-def tournament_selection(pop, fitness, k=5):
-    """Larger tournament for better selection pressure"""
+def tournament_selection(pop, fitness, k=3):
+    """Select best from k random individuals"""
     indices = np.random.choice(len(pop), k, replace=False)
     best_idx = indices[np.argmin(fitness[indices])]
     return pop[best_idx].copy()
 
-def simulated_binary_crossover(p1, p2, eta=20):
-    """SBX crossover - better for continuous optimization"""
-    child = np.zeros(NUM_DIMENSIONS)
-    for i in range(NUM_DIMENSIONS):
-        if np.random.rand() < 0.5:
-            u = np.random.rand()
-            if u <= 0.5:
-                beta = (2 * u) ** (1 / (eta + 1))
-            else:
-                beta = (1 / (2 * (1 - u))) ** (1 / (eta + 1))
-            
-            child[i] = 0.5 * ((1 + beta) * p1[i] + (1 - beta) * p2[i])
-        else:
-            child[i] = p1[i] if np.random.rand() < 0.5 else p2[i]
-    
-    return child
+def crossover(p1, p2):
+    """Simple blend crossover"""
+    alpha = np.random.rand(NUM_DIMENSIONS)
+    return alpha * p1 + (1 - alpha) * p2
 
-def polynomial_mutation(x, bounds, generation, eta=20):
-    """Polynomial mutation - adaptive and effective"""
+def mutate(x, bounds, generation):
+    """Adaptive mutation - gets smaller over time"""
     min_v, max_v = bounds
-    mutated = x.copy()
-    
-    # Adaptive mutation rate
-    pm = MUTATION_RATE * (1 + generation / NUM_GENERATIONS)
+    strength = 0.5 * (1 - generation / NUM_GENERATIONS)
     
     for i in range(NUM_DIMENSIONS):
-        if np.random.rand() < pm:
-            y = mutated[i]
-            delta = min(y - min_v, max_v - y) / (max_v - min_v)
-            
-            u = np.random.rand()
-            if u < 0.5:
-                xy = 1 - delta
-                val = 2 * u + (1 - 2 * u) * (xy ** (eta + 1))
-                deltaq = val ** (1 / (eta + 1)) - 1
-            else:
-                xy = 1 - delta
-                val = 2 * (1 - u) + 2 * (u - 0.5) * (xy ** (eta + 1))
-                deltaq = 1 - val ** (1 / (eta + 1))
-            
-            mutated[i] = y + deltaq * (max_v - min_v)
+        if np.random.rand() < MUTATION_RATE:
+            x[i] += np.random.normal(0, strength)
     
-    return np.clip(mutated, min_v, max_v)
-
-def normalize_fitness(raw_value):
-    """Better normalization for display"""
-    if raw_value < 1e-10:
-        return 1e-8
-    elif raw_value < 1e-6:
-        return raw_value * 100
-    elif raw_value < 1e-3:
-        return raw_value * 10
-    elif raw_value < 1:
-        return raw_value
-    else:
-        # For larger values, use log scaling
-        return 1 / (1 + np.log10(raw_value + 1))
+    return np.clip(x, min_v, max_v)
 
 def run_ga(func_name, seed=42, return_history=False):
-    """Optimized GA with better convergence"""
+    """Run genetic algorithm"""
     np.random.seed(seed)
     random.seed(seed)
     
     func = benchmark_functions[func_name]
     bounds = function_bounds[func_name]
     
-    # Initialize population
     pop = initialize_population(bounds)
-    best_raw = np.inf
-    best_solution = None
-    stagnation = 0
+    best_value = np.inf
     history = [] if return_history else None
     
     for gen in range(NUM_GENERATIONS):
-        # Evaluate fitness
-        raw_fitness = np.array([func(ind) for ind in pop])
-        
-        # Track best
-        gen_best_idx = np.argmin(raw_fitness)
-        gen_best = raw_fitness[gen_best_idx]
-        
-        if gen_best < best_raw:
-            best_raw = gen_best
-            best_solution = pop[gen_best_idx].copy()
-            stagnation = 0
-        else:
-            stagnation += 1
+        # Evaluate
+        fitness = np.array([func(ind) for ind in pop])
+        best_value = min(best_value, fitness.min())
         
         if return_history:
-            history.append(best_raw)
+            history.append(best_value)
         
-        # Diversity injection if stagnant
-        if stagnation > 50:
-            # Replace worst 20% with new random solutions
-            worst_indices = np.argsort(raw_fitness)[-int(POP_SIZE * 0.2):]
-            for idx in worst_indices:
-                pop[idx] = np.random.uniform(bounds[0], bounds[1], NUM_DIMENSIONS)
-            stagnation = 0
-        
-        # Create new population
+        # New population
         new_pop = []
         
-        # Elitism - keep best solutions
-        elite_indices = np.argsort(raw_fitness)[:ELITE_SIZE]
-        for idx in elite_indices:
+        # Keep best (elitism)
+        elite_idx = np.argsort(fitness)[:ELITE_SIZE]
+        for idx in elite_idx:
             new_pop.append(pop[idx].copy())
         
-        # Generate offspring
+        # Create offspring
         while len(new_pop) < POP_SIZE:
-            # Selection
-            p1 = tournament_selection(pop, raw_fitness)
-            p2 = tournament_selection(pop, raw_fitness)
+            p1 = tournament_selection(pop, fitness)
+            p2 = tournament_selection(pop, fitness)
             
-            # Crossover
             if np.random.rand() < CROSSOVER_RATE:
-                child = simulated_binary_crossover(p1, p2)
+                child = crossover(p1, p2)
             else:
                 child = p1.copy()
             
-            # Mutation
-            child = polynomial_mutation(child, bounds, gen)
-            
-            # Bounds check
-            child = np.clip(child, bounds[0], bounds[1])
-            
+            child = mutate(child, bounds, gen)
             new_pop.append(child)
         
         pop = np.array(new_pop[:POP_SIZE])
     
-    # Final evaluation
-    final_fitness = func(best_solution)
-    normalized = normalize_fitness(final_fitness)
-    
     if return_history:
-        # Normalize history
-        history = [normalize_fitness(h) for h in history]
-        return normalized, history
-    
-    return normalized
+        return best_value, history
+    return best_value
 
 def run_multiple_experiments(func_name, num_runs=NUM_RUNS):
-    """Run multiple independent experiments"""
+    """Run multiple times and collect results"""
     results = []
     history = None
     
@@ -183,12 +101,12 @@ def run_multiple_experiments(func_name, num_runs=NUM_RUNS):
         seed = 12345 + run * 9876
         
         if run == 0:
-            best_fitness, hist = run_ga(func_name, seed, return_history=True)
+            best, hist = run_ga(func_name, seed, return_history=True)
             history = hist
         else:
-            best_fitness = run_ga(func_name, seed, return_history=False)
+            best = run_ga(func_name, seed, return_history=False)
         
-        results.append(best_fitness)
+        results.append(best)
     
     return results, history
 
@@ -235,7 +153,7 @@ def run_all_functions_parallel(num_runs=25, max_time=MAX_EXECUTION_TIME):
     return all_results, plot_data, execution_time
 
 def calculate_statistics(results):
-    """Calculate statistics from results"""
+    """Calculate stats"""
     results_array = np.array(results)
     return {
         'min': np.min(results_array),
