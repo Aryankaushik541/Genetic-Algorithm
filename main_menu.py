@@ -10,6 +10,19 @@ from ga_algorithm import run_multiple_experiments, run_all_functions_parallel, c
 from visualization import plot_individual_function, plot_all_functions_combined
 from config import NUM_RUNS
 
+def format_value(val):
+    """Format value with proper precision"""
+    if val == 0:
+        return "0.00000000"
+    elif val < 1e-6:
+        return f"{val:.2e}"
+    elif val < 0.001:
+        return f"{val:.8f}"
+    elif val < 1:
+        return f"{val:.6f}"
+    else:
+        return f"{val:.4f}"
+
 def print_menu():
     print("\n" + "="*60)
     print(" GENETIC ALGORITHM BENCHMARK ".center(60))
@@ -35,10 +48,10 @@ def show_results(func_name, results, execution_time):
     print("="*60)
     
     data = [
-        ["Min", f"{stats['min']:.6f}"],
-        ["Mean", f"{stats['mean']:.6f}"],
-        ["Median", f"{stats['median']:.6f}"],
-        ["Std Dev", f"{stats['std']:.6f}"],
+        ["Min", format_value(stats['min'])],
+        ["Mean", format_value(stats['mean'])],
+        ["Median", format_value(stats['median'])],
+        ["Std Dev", format_value(stats['std'])],
         ["Runs", len(results)],
         ["Time", f"{execution_time:.2f}s"]
     ]
@@ -57,20 +70,27 @@ def show_all_results(all_results, execution_time):
         stats = calculate_statistics(results)
         data.append([
             func_name,
-            f"{stats['min']:.6f}",
-            f"{stats['mean']:.6f}",
-            f"{stats['median']:.6f}",
-            f"{stats['std']:.6f}"
+            stats['min'],
+            stats['mean'],
+            stats['median'],
+            stats['std']
         ])
     
     # Sort by mean
-    data.sort(key=lambda x: float(x[2]))
+    data.sort(key=lambda x: x[2])
     
-    # Add rank
+    # Add rank and format
     ranked = []
     for i, row in enumerate(data, 1):
         emoji = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}."
-        ranked.append([emoji] + row)
+        ranked.append([
+            emoji,
+            row[0],
+            format_value(row[1]),
+            format_value(row[2]),
+            format_value(row[3]),
+            format_value(row[4])
+        ])
     
     print(tabulate(ranked,
                    headers=["Rank", "Function", "Min", "Mean", "Median", "Std"],
@@ -78,26 +98,26 @@ def show_all_results(all_results, execution_time):
     
     print(f"\n{'='*80}")
     print(f"⚡ Time: {execution_time:.2f}s")
-    print(f"📊 Functions: {len(all_results)}")
-    print(f"🔢 Total runs: {sum(len(r) for r in all_results.values())}")
-    print("="*80)
+    print(f"✓ Lower values = Better performance")
+    print(f"{'='*80}\n")
 
-def run_single():
+def run_single_function():
     functions = show_functions()
     
-    while True:
-        try:
-            choice = int(input("\nEnter number (0 to go back): "))
-            if choice == 0:
-                return
-            if 1 <= choice <= len(functions):
-                break
-            print(f"Enter 1-{len(functions)}")
-        except:
-            print("Invalid input")
+    try:
+        choice = int(input("\nSelect function (1-15): "))
+        if choice < 1 or choice > len(functions):
+            print("Invalid choice!")
+            return
+    except ValueError:
+        print("Invalid input!")
+        return
     
     func_name = functions[choice - 1]
-    print(f"\n🔄 Running {func_name} ({NUM_RUNS} runs)...")
+    
+    print(f"\n🚀 Running {func_name}...")
+    print(f"   Runs: {NUM_RUNS}")
+    print()
     
     start = time.time()
     results, history = run_multiple_experiments(func_name, NUM_RUNS)
@@ -105,48 +125,47 @@ def run_single():
     
     stats = show_results(func_name, results, exec_time)
     
-    print("\n📊 Generating graph...")
+    # Plot
+    print("\n📊 Generating plots...")
     plot_individual_function(func_name, results, history, stats)
-    print("✓ Done!")
+    print("✓ Plots saved!\n")
 
-def run_all():
-    print("\n" + "="*60)
-    print(" PARALLEL MODE ".center(60))
-    print("="*60)
-    print(f"\n⚡ Running all {len(benchmark_functions)} functions in parallel")
-    print("Press Enter to start...")
-    input()
+def run_all_functions():
+    print("\n🚀 Starting parallel execution...")
+    print("   This will run all 15 functions simultaneously")
+    print("   Please wait...\n")
     
-    all_results, plot_data, exec_time = run_all_functions_parallel(num_runs=25)
+    all_results, plot_data, exec_time = run_all_functions_parallel()
     
     show_all_results(all_results, exec_time)
     
-    print("\n📊 Generating graphs...")
+    # Plot
+    print("📊 Generating comparison plots...")
     plot_all_functions_combined(all_results, plot_data)
-    print("✓ Done!")
+    print("✓ Plots saved!\n")
 
 def main():
     while True:
         print_menu()
         
         try:
-            choice = int(input("Choice: "))
+            choice = input("Enter choice (1-3): ").strip()
             
-            if choice == 1:
-                run_single()
-            elif choice == 2:
-                run_all()
-            elif choice == 3:
-                print("\n👋 Bye!\n")
+            if choice == '1':
+                run_single_function()
+            elif choice == '2':
+                run_all_functions()
+            elif choice == '3':
+                print("\n👋 Goodbye!\n")
                 sys.exit(0)
             else:
-                print("Enter 1, 2, or 3")
+                print("\n❌ Invalid choice! Please enter 1, 2, or 3.\n")
         
         except KeyboardInterrupt:
-            print("\n\n👋 Bye!\n")
+            print("\n\n👋 Goodbye!\n")
             sys.exit(0)
-        except:
-            print("Invalid input")
+        except Exception as e:
+            print(f"\n❌ Error: {e}\n")
 
 if __name__ == "__main__":
     main()
