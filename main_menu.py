@@ -39,8 +39,34 @@ def normalize_value(val, min_range=0.00001, max_range=0.100000):
     return max(min_range, min(max_range, scaled))
 
 def format_value(val):
-    """Format value - show 5 decimal places for consistency"""
-    return f"{val:.5f}"
+    """Format value - show full decimal format with all zeros visible"""
+    if val == 0:
+        return "0"
+    
+    # Determine number of decimal places needed
+    if val < 0.00001:
+        # Very small - show up to 20 decimal places
+        formatted = f"{val:.20f}"
+    elif val < 0.001:
+        # Small - show up to 15 decimal places
+        formatted = f"{val:.15f}"
+    elif val < 1:
+        # Medium - show up to 10 decimal places
+        formatted = f"{val:.10f}"
+    else:
+        # Larger - show 6 decimal places
+        formatted = f"{val:.6f}"
+    
+    # Remove trailing zeros but keep at least some decimals
+    formatted = formatted.rstrip('0').rstrip('.')
+    
+    # Ensure at least 5 decimal places for consistency
+    if '.' in formatted:
+        parts = formatted.split('.')
+        if len(parts[1]) < 5:
+            formatted = f"{val:.5f}"
+    
+    return formatted
 
 def print_menu():
     print("\n" + "="*60)
@@ -129,7 +155,7 @@ def show_all_results(all_results, execution_time):
     print(f"⚡ Time: {execution_time:.2f}s (30 runs per function)")
     print(f"✓ Lower values = Better performance")
     print(f"✓ All values normalized to range [0.00001 - 0.100000]")
-    print(f"✓ Optimized for better comparison and readability")
+    print(f"✓ Values shown in full decimal format (all zeros visible)")
     print(f"{'='*100}\n")
 
 def run_single_function():
