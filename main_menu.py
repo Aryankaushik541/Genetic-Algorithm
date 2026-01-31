@@ -11,60 +11,24 @@ from ga_algorithm import run_multiple_experiments, run_all_functions_parallel, c
 from visualization import plot_individual_function, plot_all_functions_combined
 from config import NUM_RUNS
 
-def normalize_value(val, min_range=0.00001, max_range=0.100000):
-    """
-    Normalize value to specified range [min_range, max_range]
-    Uses logarithmic scaling for better distribution
-    """
-    if val == 0:
-        return min_range
-    
-    # Use log scale for very small values
-    if val < 1e-20:
-        log_val = np.log10(val + 1e-30)
-        log_min = np.log10(1e-30)
-        log_max = np.log10(1.0)
-        normalized = (log_val - log_min) / (log_max - log_min)
-    elif val < 1.0:
-        # Linear scale for values < 1
-        normalized = val
-    else:
-        # Cap large values
-        normalized = min(val / 10.0, 1.0)
-    
-    # Scale to desired range
-    scaled = min_range + (normalized * (max_range - min_range))
-    
-    # Ensure within bounds
-    return max(min_range, min(max_range, scaled))
-
 def format_value(val):
-    """Format value - show full decimal format with all zeros visible"""
+    """Format value - show full decimal format (NOT scientific notation)"""
     if val == 0:
-        return "0"
+        return "0.0000000"
     
-    # Determine number of decimal places needed
-    if val < 0.00001:
-        # Very small - show up to 20 decimal places
-        formatted = f"{val:.20f}"
-    elif val < 0.001:
-        # Small - show up to 15 decimal places
-        formatted = f"{val:.15f}"
-    elif val < 1:
-        # Medium - show up to 10 decimal places
+    # Always use decimal format, never scientific notation
+    if abs(val) < 0.0000001:
+        # Very small values - show up to 10 decimal places
         formatted = f"{val:.10f}"
+    elif abs(val) < 0.001:
+        # Small values - show up to 8 decimal places
+        formatted = f"{val:.8f}"
+    elif abs(val) < 1:
+        # Medium values - show 7 decimal places
+        formatted = f"{val:.7f}"
     else:
-        # Larger - show 6 decimal places
+        # Larger values - show 6 decimal places
         formatted = f"{val:.6f}"
-    
-    # Remove trailing zeros but keep at least some decimals
-    formatted = formatted.rstrip('0').rstrip('.')
-    
-    # Ensure at least 5 decimal places for consistency
-    if '.' in formatted:
-        parts = formatted.split('.')
-        if len(parts[1]) < 5:
-            formatted = f"{val:.5f}"
     
     return formatted
 
@@ -92,31 +56,21 @@ def show_results(func_name, results, execution_time):
     print(f" {func_name.upper()} ".center(60))
     print("="*60)
     
-    # Normalize values
-    norm_stats = {
-        'min': normalize_value(stats['min']),
-        'mean': normalize_value(stats['mean']),
-        'median': normalize_value(stats['median']),
-        'std': normalize_value(stats['std'])
-    }
-    
     data = [
-        ["Min", format_value(norm_stats['min'])],
-        ["Mean", format_value(norm_stats['mean'])],
-        ["Median", format_value(norm_stats['median'])],
-        ["Std Dev", format_value(norm_stats['std'])],
+        ["Min", format_value(stats['min'])],
+        ["Mean", format_value(stats['mean'])],
+        ["Median", format_value(stats['median'])],
+        ["Std Dev", format_value(stats['std'])],
         ["Runs", len(results)],
         ["Time", f"{execution_time:.2f}s"]
     ]
     
     print(tabulate(data, headers=["Metric", "Value"], tablefmt="grid"))
-    print("\n✓ Values normalized to range [0.00001 - 0.100000]")
     return stats
 
 def show_all_results(all_results, execution_time):
     print("\n" + "="*100)
     print(" ALL FUNCTIONS (PARALLEL) ".center(100))
-    print(" (Optimized & Normalized Values) ".center(100))
     print("="*100)
     
     # Create table
@@ -134,17 +88,17 @@ def show_all_results(all_results, execution_time):
     # Sort by mean
     data.sort(key=lambda x: x[2])
     
-    # Add rank and format with normalization
+    # Add rank and format (DECIMAL FORMAT - NO SCIENTIFIC NOTATION)
     ranked = []
     for i, row in enumerate(data, 1):
         emoji = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}."
         ranked.append([
             emoji,
             row[0],
-            format_value(normalize_value(row[1])),
-            format_value(normalize_value(row[2])),
-            format_value(normalize_value(row[3])),
-            format_value(normalize_value(row[4]))
+            format_value(row[1]),  # Min - decimal format
+            format_value(row[2]),  # Mean - decimal format
+            format_value(row[3]),  # Median - decimal format
+            format_value(row[4])   # Std - decimal format
         ])
     
     print(tabulate(ranked,
@@ -154,8 +108,7 @@ def show_all_results(all_results, execution_time):
     print(f"\n{'='*100}")
     print(f"⚡ Time: {execution_time:.2f}s (30 runs per function)")
     print(f"✓ Lower values = Better performance")
-    print(f"✓ All values normalized to range [0.00001 - 0.100000]")
-    print(f"✓ Values shown in full decimal format (all zeros visible)")
+    print(f"✓ All values shown in decimal format (no scientific notation)")
     print(f"{'='*100}\n")
 
 def run_single_function():
