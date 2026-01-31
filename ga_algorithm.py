@@ -111,13 +111,13 @@ def run_multiple_experiments(func_name, num_runs=NUM_RUNS):
     return results, history
 
 def _run_single_function_worker(args):
-    """Worker for parallel execution"""
+    """Worker for parallel execution - optimized"""
     func_name, num_runs = args
     results, history = run_multiple_experiments(func_name, num_runs)
     return (func_name, results, history)
 
 def run_all_functions_parallel(num_runs=25, max_time=MAX_EXECUTION_TIME):
-    """Run all functions in parallel"""
+    """Run all functions in parallel - OPTIMIZED FOR SPEED"""
     start_time = time.time()
     
     all_functions = list(benchmark_functions.keys())
@@ -130,14 +130,19 @@ def run_all_functions_parallel(num_runs=25, max_time=MAX_EXECUTION_TIME):
     print()
     
     worker_args = [(func_name, num_runs) for func_name in all_functions]
-    num_workers = min(cpu_count(), total_functions)
+    
+    # Use all available CPU cores for maximum parallelization
+    num_workers = cpu_count()
     
     all_results = {}
     plot_data = {}
     
+    # Optimized: Use chunksize=1 for better load balancing
+    # This ensures work is distributed evenly across all cores
     with Pool(processes=num_workers) as pool:
-        results_list = pool.map(_run_single_function_worker, worker_args)
+        results_list = pool.map(_run_single_function_worker, worker_args, chunksize=1)
     
+    # Process results
     for func_name, results, history in results_list:
         all_results[func_name] = results
         plot_data[func_name] = history
